@@ -60,30 +60,30 @@ export default async function OverviewPage() {
         <StatCard label="Visitors" value={totalVisitors} icon={Users} />
       </div>
 
-      <div className="mt-8 rounded-2xl bg-white ring-1 ring-gray-900/[0.06] shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
-        <div className="flex items-center justify-between border-b border-gray-900/[0.06] px-6 py-4">
-          <h2 className="font-semibold tracking-tight text-gray-900">Recent leads</h2>
+      <div className="mt-8 rounded-2xl bg-white/[0.04] ring-1 ring-white/10 backdrop-blur-sm">
+        <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
+          <h2 className="font-semibold tracking-tight text-white">Recent leads</h2>
           <Link
             href="/leads"
-            className="flex items-center gap-1 text-sm font-medium text-blue-700 hover:text-blue-800"
+            className="flex items-center gap-1 text-sm font-medium text-blue-400 hover:text-blue-300"
           >
             View all <ArrowUpRight size={14} />
           </Link>
         </div>
 
         {recentLeads.length === 0 ? (
-          <p className="px-6 py-10 text-center text-sm text-gray-400">No leads yet.</p>
+          <p className="px-6 py-10 text-center text-sm text-gray-500">No leads yet.</p>
         ) : (
-          <ul className="divide-y divide-gray-900/[0.06]">
+          <ul className="divide-y divide-white/10">
             {recentLeads.map((lead) => (
               <li key={lead.id} className="flex items-center justify-between px-6 py-4">
                 <div>
-                  <p className="font-medium text-gray-900">{lead.name}</p>
-                  <p className="text-sm text-gray-500">{lead.email}</p>
+                  <p className="font-medium text-white">{lead.name}</p>
+                  <p className="text-sm text-gray-400">{lead.email}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm text-gray-500">{lead.subject}</p>
-                  <p className="text-xs text-gray-400">{timeAgo(lead.createdAt)}</p>
+                  <p className="text-sm text-gray-400">{lead.subject}</p>
+                  <p className="text-xs text-gray-500">{timeAgo(lead.createdAt)}</p>
                 </div>
               </li>
             ))}

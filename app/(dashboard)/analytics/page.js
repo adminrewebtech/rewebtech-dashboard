@@ -74,38 +74,38 @@ export default async function AnalyticsPage() {
         />
       </div>
 
-      <div className="mt-6 rounded-2xl bg-white p-6 ring-1 ring-gray-900/[0.06] shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
-        <h2 className="mb-4 font-semibold tracking-tight text-gray-900">Visits per day</h2>
+      <div className="mt-6 rounded-2xl bg-white/[0.04] p-6 ring-1 ring-white/10 backdrop-blur-sm">
+        <h2 className="mb-4 font-semibold tracking-tight text-white">Visits per day</h2>
         <VisitsChart data={chartData} />
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="rounded-2xl bg-white p-6 ring-1 ring-gray-900/[0.06] shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
-          <h2 className="mb-4 font-semibold tracking-tight text-gray-900">Top pages</h2>
+        <div className="rounded-2xl bg-white/[0.04] p-6 ring-1 ring-white/10 backdrop-blur-sm">
+          <h2 className="mb-4 font-semibold tracking-tight text-white">Top pages</h2>
           {topPages.length === 0 ? (
-            <p className="text-sm text-gray-400">No data yet.</p>
+            <p className="text-sm text-gray-500">No data yet.</p>
           ) : (
             <ul className="space-y-3">
               {topPages.map(([path, count]) => (
                 <li key={path} className="flex items-center justify-between text-sm">
-                  <span className="truncate text-gray-700">{path}</span>
-                  <span className="font-medium text-gray-900">{count}</span>
+                  <span className="truncate text-gray-300">{path}</span>
+                  <span className="font-medium text-white">{count}</span>
                 </li>
               ))}
             </ul>
           )}
         </div>
 
-        <div className="rounded-2xl bg-white p-6 ring-1 ring-gray-900/[0.06] shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
-          <h2 className="mb-4 font-semibold tracking-tight text-gray-900">Top referrers</h2>
+        <div className="rounded-2xl bg-white/[0.04] p-6 ring-1 ring-white/10 backdrop-blur-sm">
+          <h2 className="mb-4 font-semibold tracking-tight text-white">Top referrers</h2>
           {topReferrers.length === 0 ? (
-            <p className="text-sm text-gray-400">No referrer data yet.</p>
+            <p className="text-sm text-gray-500">No referrer data yet.</p>
           ) : (
             <ul className="space-y-3">
               {topReferrers.map(([ref, count]) => (
                 <li key={ref} className="flex items-center justify-between text-sm">
-                  <span className="truncate text-gray-700">{ref}</span>
-                  <span className="font-medium text-gray-900">{count}</span>
+                  <span className="truncate text-gray-300">{ref}</span>
+                  <span className="font-medium text-white">{count}</span>
                 </li>
               ))}
             </ul>
@@ -113,24 +113,24 @@ export default async function AnalyticsPage() {
         </div>
       </div>
 
-      <div className="mt-6 overflow-x-auto rounded-2xl bg-white ring-1 ring-gray-900/[0.06] shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
-        <div className="border-b border-gray-900/[0.06] px-6 py-4">
-          <h2 className="font-semibold tracking-tight text-gray-900">Recent activity</h2>
+      <div className="mt-6 overflow-x-auto rounded-2xl bg-white/[0.04] ring-1 ring-white/10 backdrop-blur-sm">
+        <div className="border-b border-white/10 px-6 py-4">
+          <h2 className="font-semibold tracking-tight text-white">Recent activity</h2>
         </div>
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className="border-b border-gray-900/[0.06] text-xs uppercase tracking-wide text-gray-500">
+            <tr className="border-b border-white/10 text-xs uppercase tracking-wide text-gray-500">
               <th className="px-6 py-3 font-medium">Path</th>
               <th className="px-6 py-3 font-medium">Referrer</th>
               <th className="px-6 py-3 font-medium">When</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-900/[0.06]">
+          <tbody className="divide-y divide-white/10">
             {recentVisits.map((v, i) => (
-              <tr key={i} className="hover:bg-gray-50">
-                <td className="px-6 py-3 text-gray-900">{v.path}</td>
-                <td className="max-w-[240px] truncate px-6 py-3 text-gray-500">{v.referrer || '—'}</td>
-                <td className="px-6 py-3 whitespace-nowrap text-gray-400">
+              <tr key={i} className="hover:bg-white/5">
+                <td className="px-6 py-3 text-white">{v.path}</td>
+                <td className="max-w-[240px] truncate px-6 py-3 text-gray-400">{v.referrer || '—'}</td>
+                <td className="px-6 py-3 whitespace-nowrap text-gray-500">
                   {new Date(v.visitedAt).toLocaleString('en-IN', {
                     day: 'numeric',
                     month: 'short',

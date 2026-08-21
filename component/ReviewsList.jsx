@@ -18,7 +18,7 @@ function Stars({ rating }) {
         <Star
           key={i}
           size={14}
-          className={i <= rating ? 'fill-amber-400 text-amber-400' : 'text-gray-200'}
+          className={i <= rating ? 'fill-amber-400 text-amber-400' : 'text-white/10'}
         />
       ))}
     </div>
@@ -42,35 +42,35 @@ export default function ReviewsList({ reviews }) {
       {rows.map((review) => (
         <div
           key={review.id}
-          className="rounded-2xl bg-white p-5 ring-1 ring-gray-900/[0.06] shadow-[0_1px_2px_rgba(16,24,40,0.04)]"
+          className="rounded-2xl bg-white/[0.04] p-5 ring-1 ring-white/10 backdrop-blur-sm"
         >
           <div className="flex items-start justify-between gap-4">
             <div>
               <div className="flex items-center gap-2">
-                <p className="font-medium text-gray-900">{review.name}</p>
+                <p className="font-medium text-white">{review.name}</p>
                 <Stars rating={review.rating} />
               </div>
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-gray-500">
                 {review.email} · {formatDate(review.createdAt)}
               </p>
             </div>
 
-            <label className="flex shrink-0 cursor-pointer items-center gap-2 text-xs font-medium text-gray-500">
+            <label className="flex shrink-0 cursor-pointer items-center gap-2 text-xs font-medium text-gray-400">
               <input
                 type="checkbox"
                 checked={review.featured}
                 onChange={(e) => toggleFeatured(review.id, e.target.checked)}
-                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600"
+                className="h-4 w-4 rounded border-white/20 bg-white/5 text-blue-500 focus:ring-blue-500"
               />
               Featured
             </label>
           </div>
-          <p className="mt-3 text-sm text-gray-600">{review.review}</p>
+          <p className="mt-3 text-sm text-gray-300">{review.review}</p>
         </div>
       ))}
 
       {rows.length === 0 && (
-        <div className="rounded-2xl bg-white p-10 text-center text-sm text-gray-400 ring-1 ring-gray-900/[0.06]">
+        <div className="rounded-2xl bg-white/[0.04] p-10 text-center text-sm text-gray-500 ring-1 ring-white/10">
           No reviews yet.
         </div>
       )}

@@ -39,22 +39,22 @@ export default async function LeadsPage({ searchParams }) {
           name="q"
           defaultValue={q}
           placeholder="Search name, email, company..."
-          className="w-64 rounded-lg bg-white px-3.5 py-2 text-sm text-gray-900 outline-none ring-1 ring-gray-900/[0.08] focus:ring-2 focus:ring-blue-600"
+          className="w-64 rounded-lg bg-white/5 px-3.5 py-2 text-sm text-white outline-none ring-1 ring-white/10 placeholder:text-gray-500 focus:ring-2 focus:ring-blue-500"
         />
         <select
           name="status"
           defaultValue={status}
-          className="rounded-lg bg-white px-3.5 py-2 text-sm text-gray-900 outline-none ring-1 ring-gray-900/[0.08] focus:ring-2 focus:ring-blue-600"
+          className="rounded-lg bg-white/5 px-3.5 py-2 text-sm text-white outline-none ring-1 ring-white/10 focus:ring-2 focus:ring-blue-500"
         >
           {STATUS_OPTIONS.map((s) => (
-            <option key={s} value={s}>
+            <option key={s} value={s} className="bg-[#0a1220] text-white">
               {s === 'all' ? 'All statuses' : s}
             </option>
           ))}
         </select>
         <button
           type="submit"
-          className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-800"
+          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-500"
         >
           Filter
         </button>

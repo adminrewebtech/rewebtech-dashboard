@@ -1,8 +1,8 @@
 const STATUS_STYLES = {
-  new: 'bg-blue-50 text-blue-700 ring-blue-600/20',
-  contacted: 'bg-amber-50 text-amber-700 ring-amber-600/20',
-  won: 'bg-green-50 text-green-700 ring-green-600/20',
-  lost: 'bg-gray-100 text-gray-500 ring-gray-500/20',
+  new: 'bg-blue-500/15 text-blue-300 ring-blue-400/25',
+  contacted: 'bg-amber-500/15 text-amber-300 ring-amber-400/25',
+  won: 'bg-green-500/15 text-green-300 ring-green-400/25',
+  lost: 'bg-white/10 text-gray-400 ring-white/15',
 };
 
 export default function StatusBadge({ status }) {
