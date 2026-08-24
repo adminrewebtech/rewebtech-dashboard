@@ -1,35 +1,40 @@
 # RewebTech Dashboard
 
-Internal admin dashboard for [rewebetch.in](https://rewebtech.in). Reads and manages
-the same MongoDB database as the website repo (leads, subscribers, visitor
-analytics, launch waitlist, reviews) through its own Prisma schema.
+Internal admin dashboard for [rewebetch.in](https://rewebtech.in).
+
+`/leads` (Lead Generation) talks to the RewebTech API (`api.rewebtech.in`) —
+OTP + httpOnly cookie auth, leads, status workflow, contact history, email.
+The rest (`/`, `/subscribers`, `/analytics`, `/waitlist`, `/reviews`) still
+reads the same MongoDB database as the website repo through its own Prisma
+schema, unrelated to the leads API.
 
 ## Setup
 
 ```bash
 npm install
-cp .env.example .env.local   # fill in DATABASE_URL, NEXTAUTH_SECRET, ADMIN_*
-npm run seed:admin           # creates/updates the first admin login
+cp .env.example .env.local   # fill in DATABASE_URL, NEXT_PUBLIC_API_URL, ADMIN_*
 npm run dev                  # http://localhost:3000 (or PORT=4000 npm run dev)
 ```
 
-`NEXTAUTH_SECRET` — generate with:
-
-```bash
-node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-```
+`NEXT_PUBLIC_API_URL` must point at a RewebTech API instance whose
+`CORS_ORIGIN` allows this app's origin. Login is email → OTP code, verified
+against that API; the session lives in an httpOnly cookie the API sets
+(`rwt_session`), not in this app.
 
 ## What's here
 
-- `/` — overview KPIs (leads, subscribers, reviews, waitlist, visitors)
-- `/leads` — Contact form submissions, searchable/filterable, status tracking (new/contacted/won/lost), internal notes
-- `/subscribers` — newsletter subscribe/unsubscribe list
-- `/analytics` — visits-per-day chart, top pages, top referrers, recent activity (from Visitor/VisitEvent)
-- `/waitlist` — launch waitlist signups
-- `/reviews` — verified reviews with a "featured" toggle for surfacing on the website later
+- `/` — overview KPIs (leads, subscribers, reviews, waitlist, visitors) — local DB
+- `/leads` — Lead Generation: stat cards, status tabs, search, cursor pagination,
+  detail drawer with status changes, call/email/other logging, email compose —
+  all via the RewebTech API
+- `/subscribers` — newsletter subscribe/unsubscribe list — local DB
+- `/analytics` — visits-per-day chart, top pages, top referrers, recent activity — local DB
+- `/waitlist` — launch waitlist signups — local DB
+- `/reviews` — verified reviews with a "featured" toggle — local DB
 
-Auth is email/password via NextAuth credentials + a Mongo-backed `AdminUser`
-model — there's no public signup, admins are created with `npm run seed:admin`.
+`ADMIN_*` / `npm run seed:admin` are legacy — they seeded the old NextAuth
+credentials login, which `/leads` no longer uses. Left in place in case the
+other local-DB pages still need an admin gate reintroduced later.
 
 ## Notes
 
@@ -37,5 +42,6 @@ model — there's no public signup, admins are created with `npm run seed:admin`
   `schema.prisma` pointed at the same database, with a few additional
   optional fields (`Contact.status`, `Contact.notes`, `Review.featured`)
   that the website simply never sets.
-- Deploy separately from the main site (e.g. a different Vercel project on
-  `admin.rewebtech.in`), pointed at the same `DATABASE_URL`.
+- Deploy as a subdomain of `rewebtech.in` (e.g. `dashboard.rewebtech.in`) —
+  the session cookie is `SameSite=Lax` and scoped to `.rewebtech.in`, so a
+  cross-domain deploy (e.g. `*.vercel.app`) breaks login.
