@@ -63,37 +63,29 @@
 
 @layer components {
   /*
-   * Ek hi surface treatment poore app me. Border ke saath ek bahut halki
-   * shadow — flat border-only cards ke muqable ismein depth aati hai, aur
-   * bhaari shadow ke muqable yeh saaf rehti hai.
+   * Card surface — website ke system se hi liya (rewebtech.in ka styles/theme.js):
+   * ek hairline ring aur do-layer shadow. 1px gray border ke muqable yeh kaafi
+   * mehnga dikhta hai aur tinted background par bhi apna kinara rakhta hai.
+   * Ring `inset` shadow se hai, border se nahi — border layout ki chaudai
+   * badal deta hai, shadow nahi.
    */
   .panel {
     background: #fff;
-    border: 1px solid var(--color-hairline);
     border-radius: 1rem;
-    box-shadow: 0 1px 2px rgb(15 23 42 / 0.04), 0 1px 3px rgb(15 23 42 / 0.03);
+    box-shadow:
+      inset 0 0 0 1px rgb(15 23 42 / 0.06),
+      0 1px 2px rgb(16 24 40 / 0.04),
+      0 12px 32px -16px rgb(16 24 40 / 0.16);
   }
 
   .panel-hover {
-    transition: box-shadow 180ms ease, border-color 180ms ease;
+    transition: box-shadow 300ms ease, transform 300ms ease;
   }
   .panel-hover:hover {
-    border-color: #d7e0ee;
-    box-shadow: 0 4px 12px -2px rgb(15 23 42 / 0.08), 0 2px 4px rgb(15 23 42 / 0.04);
-  }
-
-  /* Primary action — halka gradient aur uske neeche blue glow. */
-  .btn-primary {
-    background-image: linear-gradient(to bottom, var(--color-blue-500), var(--color-blue-600));
-    color: #fff;
-    box-shadow: 0 6px 16px -6px rgb(37 99 235 / 0.55), inset 0 1px 0 rgb(255 255 255 / 0.25);
-    transition: filter 160ms ease, box-shadow 160ms ease;
-  }
-  .btn-primary:hover:not(:disabled) {
-    filter: brightness(1.06);
-    box-shadow: 0 8px 20px -6px rgb(37 99 235 / 0.65), inset 0 1px 0 rgb(255 255 255 / 0.3);
-  }
-  .btn-primary:active:not(:disabled) {
-    filter: brightness(0.96);
+    transform: translateY(-2px);
+    box-shadow:
+      inset 0 0 0 1px rgb(37 99 235 / 0.25),
+      0 2px 4px rgb(16 24 40 / 0.06),
+      0 28px 56px -24px rgb(29 78 216 / 0.3);
   }
 }

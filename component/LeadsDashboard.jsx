@@ -7,6 +7,7 @@ import { useAuth } from '@/component/AuthProvider';
 import { useToasts, ToastStack } from '@/component/Toasts';
 import LeadDrawer from '@/component/LeadDrawer';
 import PageHeader from '@/component/PageHeader';
+import Button from '@/component/Button';
 import StatCard from '@/component/StatCard';
 import { FILTER_TABS, statusMeta } from '@/lib/leadStatus';
 
@@ -338,14 +339,9 @@ export default function LeadsDashboard() {
 
       {nextCursor && !loadingList && (
         <div className="mt-4 flex justify-center">
-          <button
-            onClick={() => fetchLeads({ cursor: nextCursor })}
-            disabled={loadingMore}
-            className="inline-flex items-center gap-2 rounded-xl border border-[#e6ecf6] bg-white px-5 py-2.5 text-sm font-medium text-slate-600 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors hover:border-[#d7e0ee] hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50"
-          >
-            {loadingMore && <Loader2 size={14} className="animate-spin" />}
+          <Button loading={loadingMore} onClick={() => fetchLeads({ cursor: nextCursor })}>
             {loadingMore ? 'Loading…' : 'Load more'}
-          </button>
+          </Button>
         </div>
       )}
 

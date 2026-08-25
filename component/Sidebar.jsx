@@ -11,6 +11,16 @@ const NAV_ITEMS = [
   { href: '/reviews', label: 'Reviews', icon: Star },
 ];
 
+/**
+ * Sidebar.
+ *
+ * Rang website se liye hain (rewebtech.in ka `styles/theme.js`): dark panel
+ * `#060f21` aur uske upar wahi blue radial glow jo site ke dark sections par
+ * hai. Content light rehta hai — dark rail plus light canvas.
+ *
+ * `sticky top-0 h-screen` isliye ki scroll par nav apni jagah rahe. Pehle woh
+ * page ke saath upar chali jaati thi.
+ */
 export default function Sidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
@@ -20,21 +30,21 @@ export default function Sidebar() {
 
   return (
     <aside
-      className={`relative flex h-screen shrink-0 flex-col overflow-hidden border-r border-[#e6ecf6] bg-white transition-[width] duration-200 ease-out ${
+      className={`sticky top-0 flex h-screen shrink-0 flex-col overflow-hidden bg-[#060f21] transition-[width] duration-200 ease-out ${
         open ? 'w-[248px]' : 'w-[76px]'
       }`}
     >
-      {/* Halka blue wash — sidebar ko plain white slab ke bajaye thodi jaan deta hai. */}
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(59,130,246,0.06),rgba(59,130,246,0)_38%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(65%_45%_at_50%_0%,rgba(37,99,235,0.28),transparent_70%)]" />
+      <div className="pointer-events-none absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/10 to-transparent" />
 
       <div className="relative flex items-center gap-3 px-5 py-6">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-[0_8px_18px_-8px_rgba(37,99,235,0.8)]">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-[0_6px_16px_-6px_rgba(29,78,216,0.6)]">
           <LayoutDashboard size={18} />
         </div>
         {open && (
           <div className="min-w-0">
-            <div className="truncate text-[15px] font-semibold tracking-tight text-slate-900">RewebTech</div>
-            <div className="truncate text-[11px] text-slate-400">Admin dashboard</div>
+            <div className="truncate text-[15px] font-semibold tracking-tight text-white">RewebTech</div>
+            <div className="truncate text-[11px] text-blue-300/70">Admin dashboard</div>
           </div>
         )}
       </div>
@@ -49,15 +59,14 @@ export default function Sidebar() {
               title={!open ? label : undefined}
               className={`group relative flex items-center gap-3 whitespace-nowrap rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
                 active
-                  ? 'bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-100'
-                  : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                  ? 'bg-blue-500/15 text-white ring-1 ring-inset ring-blue-400/25'
+                  : 'text-gray-400 hover:bg-white/[0.06] hover:text-white'
               }`}
             >
-              {/* Active item ka left accent — nazar turant yahan jaati hai. */}
               {active && (
-                <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-blue-600" />
+                <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-blue-400 shadow-[0_0_12px_2px_rgba(59,130,246,0.55)]" />
               )}
-              <Icon size={18} className={`shrink-0 ${active ? 'text-blue-600' : 'text-slate-400'}`} />
+              <Icon size={18} className={`shrink-0 ${active ? 'text-blue-300' : 'text-gray-500'}`} />
               {open && label}
             </Link>
           );
@@ -65,13 +74,13 @@ export default function Sidebar() {
 
         <div
           title={!open ? 'Clients — coming soon' : undefined}
-          className="flex cursor-not-allowed items-center gap-3 whitespace-nowrap rounded-xl px-3 py-2.5 text-sm font-medium text-slate-300"
+          className="flex cursor-not-allowed items-center gap-3 whitespace-nowrap rounded-xl px-3 py-2.5 text-sm font-medium text-gray-600"
         >
           <Users size={18} className="shrink-0" />
           {open && (
             <span className="flex items-center gap-2">
               Clients
-              <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[9px] font-semibold tracking-wide text-slate-400">
+              <span className="rounded-full bg-white/[0.06] px-1.5 py-0.5 text-[9px] font-semibold tracking-wide text-gray-500">
                 SOON
               </span>
             </span>
@@ -79,16 +88,18 @@ export default function Sidebar() {
         </div>
       </nav>
 
-      <div className="relative border-t border-[#eef2f8] px-3 py-4">
+      <div className="relative px-3 py-4">
+        <div className="mb-3 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+
         {user && (
-          <div className={`mb-2 flex items-center gap-2.5 rounded-xl px-2 py-2 ${open ? 'bg-slate-50' : ''}`}>
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-50 text-[11px] font-semibold text-blue-700 ring-1 ring-inset ring-blue-100">
+          <div className={`mb-2 flex items-center gap-2.5 rounded-xl px-2 py-2 ${open ? 'bg-white/[0.04]' : ''}`}>
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-500/15 text-[11px] font-semibold text-blue-300 ring-1 ring-inset ring-blue-400/20">
               {initials}
             </div>
             {open && (
               <div className="min-w-0">
-                <div className="truncate text-xs font-medium text-slate-700">{user.name}</div>
-                <div className="truncate text-[10px] uppercase tracking-wide text-slate-400">{user.role}</div>
+                <div className="truncate text-xs font-medium text-gray-200">{user.name}</div>
+                <div className="truncate text-[10px] uppercase tracking-wide text-gray-500">{user.role}</div>
               </div>
             )}
           </div>
@@ -97,16 +108,16 @@ export default function Sidebar() {
         <button
           onClick={logout}
           title={!open ? 'Sign out' : undefined}
-          className="flex w-full items-center gap-3 whitespace-nowrap rounded-xl px-3 py-2.5 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900"
+          className="flex w-full items-center gap-3 whitespace-nowrap rounded-xl px-3 py-2.5 text-sm font-medium text-gray-400 transition-colors hover:bg-white/[0.06] hover:text-white"
         >
-          <LogOut size={18} className="shrink-0 text-slate-400" />
+          <LogOut size={18} className="shrink-0 text-gray-500" />
           {open && 'Sign out'}
         </button>
 
         <button
           onClick={() => setOpen((v) => !v)}
           title={!open ? 'Expand' : undefined}
-          className="mt-0.5 flex w-full items-center gap-3 whitespace-nowrap rounded-xl px-3 py-2.5 text-sm font-medium text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-700"
+          className="mt-0.5 flex w-full items-center gap-3 whitespace-nowrap rounded-xl px-3 py-2.5 text-sm font-medium text-gray-500 transition-colors hover:bg-white/[0.06] hover:text-gray-200"
         >
           {open ? <ChevronsLeft size={18} className="shrink-0" /> : <ChevronsRight size={18} className="shrink-0" />}
           {open && 'Collapse'}

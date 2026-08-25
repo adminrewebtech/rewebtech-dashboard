@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { X, Phone, Mail, User, Loader2, Send } from 'lucide-react';
 import { statusMeta } from '@/lib/leadStatus';
 import StatusSelect from '@/component/StatusSelect';
+import Button from '@/component/Button';
 
 const TOUCH = {
   CALL: { icon: Phone, title: 'Phone call' },
@@ -163,36 +164,39 @@ export default function LeadDrawer({
                   <SectionLabel>Log a touchpoint</SectionLabel>
                   <div className="flex gap-2">
                     {canUpdate && (
-                      <button
+                      <Button
+                        size="sm"
+                        fullWidth
+                        icon={Phone}
+                        loading={busy('touch:CALL')}
                         disabled={!!pending}
                         onClick={() => onLogTouch('CALL')}
-                        className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-[#e6ecf6] bg-white py-2.5 text-xs font-medium text-slate-600 transition-colors hover:border-[#d7e0ee] hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50"
                       >
-                        {busy('touch:CALL') ? <Loader2 size={13} className="animate-spin" /> : <Phone size={13} />}
                         Call
-                      </button>
+                      </Button>
                     )}
                     {canEmail && (
-                      <button
+                      <Button
+                        size="sm"
+                        fullWidth
+                        icon={Mail}
                         onClick={() => setEmailOpen((v) => !v)}
-                        className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl border py-2.5 text-xs font-medium transition-colors ${
-                          emailOpen
-                            ? 'border-blue-200 bg-blue-50 text-blue-700'
-                            : 'border-[#e6ecf6] bg-white text-slate-600 hover:border-[#d7e0ee] hover:bg-slate-50 hover:text-slate-900'
-                        }`}
+                        className={emailOpen ? 'bg-blue-50 text-blue-700 ring-blue-200 hover:bg-blue-50' : ''}
                       >
-                        <Mail size={13} /> Email
-                      </button>
+                        Email
+                      </Button>
                     )}
                     {canUpdate && (
-                      <button
+                      <Button
+                        size="sm"
+                        fullWidth
+                        icon={User}
+                        loading={busy('touch:OTHER')}
                         disabled={!!pending}
                         onClick={() => onLogTouch('OTHER')}
-                        className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-[#e6ecf6] bg-white py-2.5 text-xs font-medium text-slate-600 transition-colors hover:border-[#d7e0ee] hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50"
                       >
-                        {busy('touch:OTHER') ? <Loader2 size={13} className="animate-spin" /> : <User size={13} />}
                         Other
-                      </button>
+                      </Button>
                     )}
                   </div>
                 </div>
@@ -218,7 +222,13 @@ export default function LeadDrawer({
                     className="min-h-[110px] resize-y rounded-lg border border-[#dbe4f3] bg-white px-3 py-2 text-sm leading-relaxed text-slate-900 outline-none transition-shadow placeholder:text-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 disabled:opacity-50"
                   />
                   <div className="flex gap-2">
-                    <button
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      fullWidth
+                      icon={Send}
+                      loading={busy('email')}
+                      disabled={!subject.trim() || !body.trim()}
                       onClick={() =>
                         onSendEmail({ subject, body }, () => {
                           setEmailOpen(false);
@@ -226,19 +236,12 @@ export default function LeadDrawer({
                           setBody('');
                         })
                       }
-                      disabled={busy('email') || !subject.trim() || !body.trim()}
-                      className="btn-primary flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold disabled:opacity-40"
                     >
-                      {busy('email') ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
                       {busy('email') ? 'Sending…' : 'Send'}
-                    </button>
-                    <button
-                      onClick={() => setEmailOpen(false)}
-                      disabled={busy('email')}
-                      className="rounded-lg border border-[#dbe4f3] bg-white px-4 py-2 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-800 disabled:opacity-50"
-                    >
+                    </Button>
+                    <Button variant="tertiary" size="sm" disabled={busy('email')} onClick={() => setEmailOpen(false)}>
                       Cancel
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )}

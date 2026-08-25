@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { LayoutDashboard } from 'lucide-react';
 import { api } from '@/lib/api';
+import Button from '@/component/Button';
 
 const RESEND_COOLDOWN_S = 15;
 
@@ -125,13 +126,9 @@ function LoginForm() {
               </p>
             )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-primary w-full rounded-xl py-2.5 font-semibold disabled:opacity-50"
-            >
-              {loading ? 'Sending code...' : 'Send code'}
-            </button>
+            <Button type="submit" variant="primary" fullWidth loading={loading}>
+              {loading ? 'Sending code…' : 'Send code'}
+            </Button>
           </form>
         ) : (
           <form onSubmit={verifyOtp} className="space-y-4">
@@ -167,13 +164,9 @@ function LoginForm() {
               </p>
             )}
 
-            <button
-              type="submit"
-              disabled={loading || otp.length !== 6}
-              className="btn-primary w-full rounded-xl py-2.5 font-semibold disabled:opacity-50"
-            >
-              {loading ? 'Verifying...' : 'Verify & sign in'}
-            </button>
+            <Button type="submit" variant="primary" fullWidth loading={loading} disabled={otp.length !== 6}>
+              {loading ? 'Verifying…' : 'Verify & sign in'}
+            </Button>
 
             <div className="flex items-center justify-between text-sm">
               <button
