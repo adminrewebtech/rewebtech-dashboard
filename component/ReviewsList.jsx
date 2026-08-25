@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Star } from 'lucide-react';
+import { api } from '@/lib/api';
 
 function formatDate(date) {
   return new Date(date).toLocaleDateString('en-IN', {
@@ -27,18 +28,33 @@ function Stars({ rating }) {
 
 export default function ReviewsList({ reviews }) {
   const [rows, setRows] = useState(reviews);
+  const [error, setError] = useState('');
+
+  const setFeatured = (id, featured) =>
+    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, featured } : r)));
 
   const toggleFeatured = async (id, featured) => {
-    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, featured } : r)));
-    await fetch(`/api/reviews/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ featured }),
-    });
+    setError('');
+    // Optimistic — checkbox turant response de, network ka intezaar na kare.
+    setFeatured(id, featured);
+    try {
+      await api(`/reviews/${id}/featured`, { method: 'PATCH', body: { featured } });
+    } catch {
+      // Save fail hua toh checkbox wapas usi state me, warna UI jhooth bolta
+      // rahega ki review featured hai jabki website par kuch nahi badla.
+      setFeatured(id, !featured);
+      setError('Could not save that change. Try again.');
+    }
   };
 
   return (
     <div className="space-y-3">
+      {error && (
+        <p className="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-300 ring-1 ring-red-500/20">
+          {error}
+        </p>
+      )}
+
       {rows.map((review) => (
         <div
           key={review.id}

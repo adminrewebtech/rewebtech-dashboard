@@ -1,47 +1,46 @@
 # RewebTech Dashboard
 
-Internal admin dashboard for [rewebetch.in](https://rewebtech.in).
+Internal admin dashboard for [rewebtech.in](https://rewebtech.in).
 
-`/leads` (Lead Generation) talks to the RewebTech API (`api.rewebtech.in`) —
-OTP + httpOnly cookie auth, leads, status workflow, contact history, email.
-The rest (`/`, `/subscribers`, `/analytics`, `/waitlist`, `/reviews`) still
-reads the same MongoDB database as the website repo through its own Prisma
-schema, unrelated to the leads API.
+Saara data [RewebTech API](https://api.rewebtech.in) se aata hai — OTP + httpOnly
+cookie auth, leads, aur reviews. **Is app ka apna database connection nahi hai**
+aur na koi ORM: har page API call karta hai. Contract `API.md` me hai (API repo).
 
 ## Setup
 
 ```bash
 npm install
-cp .env.example .env.local   # fill in DATABASE_URL, NEXT_PUBLIC_API_URL, ADMIN_*
-npm run dev                  # http://localhost:3000 (or PORT=4000 npm run dev)
+cp .env.example .env.local   # NEXT_PUBLIC_API_URL bharo
+npm run dev                  # http://localhost:3000
 ```
 
-`NEXT_PUBLIC_API_URL` must point at a RewebTech API instance whose
-`CORS_ORIGIN` allows this app's origin. Login is email → OTP code, verified
-against that API; the session lives in an httpOnly cookie the API sets
-(`rwt_session`), not in this app.
+## Local development
 
-## What's here
+API bhi **locally** chalani padegi (`http://localhost:4000/api/v1`), prod API par
+point karke kaam nahi chalega. Session cookie `SameSite=Lax` hai aur
+`.rewebtech.in` par scoped hai — `localhost:3000` se `api.rewebtech.in` ek
+cross-site request hai, aur browser us par cookie bhejta hi nahi. Login "succeed"
+dikhega par har agli call 401 degi.
 
-- `/` — overview KPIs (leads, subscribers, reviews, waitlist, visitors) — local DB
+Locally dono `localhost` par hote hain (`:3000` aur `:4000`), toh woh same-site
+hain aur Lax cookie theek chalti hai. API ke `.env` me `CORS_ORIGIN=http://localhost:3000`
+rakho aur `COOKIE_DOMAIN` khaali chhod do.
+
+## Pages
+
+- `/` — Overview: leads aur reviews ke counts + recent leads (`GET /overview`)
 - `/leads` — Lead Generation: stat cards, status tabs, search, cursor pagination,
-  detail drawer with status changes, call/email/other logging, email compose —
-  all via the RewebTech API
-- `/subscribers` — newsletter subscribe/unsubscribe list — local DB
-- `/analytics` — visits-per-day chart, top pages, top referrers, recent activity — local DB
-- `/waitlist` — launch waitlist signups — local DB
-- `/reviews` — verified reviews with a "featured" toggle — local DB
+  detail drawer, status changes, call/email/other logging, email compose
+- `/reviews` — verified reviews aur "featured" toggle (`GET /reviews`,
+  `PATCH /reviews/:id/featured`)
 
-`ADMIN_*` / `npm run seed:admin` are legacy — they seeded the old NextAuth
-credentials login, which `/leads` no longer uses. Left in place in case the
-other local-DB pages still need an admin gate reintroduced later.
+## Deploy
 
-## Notes
+**`dashboard.rewebtech.in` par hi deploy karna hai** — yeh choice nahi hai.
+Session cookie `SameSite=Lax` hai aur `.rewebtech.in` par set hoti hai, toh kisi
+aur domain par (jaise `*.vercel.app`) login kabhi kaam nahi karega. Custom domain
+add karne ke baad Vercel/Amplify/kuch bhi chalega — shart domain ki hai, host ki
+nahi.
 
-- This repo does **not** modify the website's schema — it's a separate
-  `schema.prisma` pointed at the same database, with a few additional
-  optional fields (`Contact.status`, `Contact.notes`, `Review.featured`)
-  that the website simply never sets.
-- Deploy as a subdomain of `rewebtech.in` (e.g. `dashboard.rewebtech.in`) —
-  the session cookie is `SameSite=Lax` and scoped to `.rewebtech.in`, so a
-  cross-domain deploy (e.g. `*.vercel.app`) breaks login.
+API ke prod `.env` me `CORS_ORIGIN` isi origin par set hona chahiye:
+`https://dashboard.rewebtech.in`

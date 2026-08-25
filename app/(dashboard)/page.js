@@ -1,6 +1,6 @@
 import Link from 'next/link';
-import { Inbox, Mail, Star, Rocket, Users, ArrowUpRight } from 'lucide-react';
-import prisma from '@/lib/prisma';
+import { Inbox, TrendingUp, Star, Sparkles, ArrowUpRight } from 'lucide-react';
+import { serverApi } from '@/lib/serverApi';
 import PageHeader from '@/component/PageHeader';
 import StatCard from '@/component/StatCard';
 
@@ -23,41 +23,21 @@ function timeAgo(date) {
 }
 
 export default async function OverviewPage() {
-  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-
-  const [
-    totalLeads,
-    newLeadsThisWeek,
-    activeSubscribers,
-    totalReviews,
-    waitlistCount,
-    totalVisitors,
-    recentLeads,
-  ] = await Promise.all([
-    prisma.contact.count(),
-    prisma.contact.count({ where: { createdAt: { gte: weekAgo } } }),
-    prisma.subscribe.count({ where: { status: 'subscribed' } }),
-    prisma.review.count(),
-    prisma.launchJoin.count(),
-    prisma.visitor.count(),
-    prisma.contact.findMany({
-      orderBy: { createdAt: 'desc' },
-      take: 5,
-      select: { id: true, name: true, email: true, subject: true, status: true, createdAt: true },
-    }),
-  ]);
+  // Ek call me saare counts — pehle yeh alag-alag DB queries thi is page ke
+  // andar. Ab poora data API se aata hai. Dekho API.md §3
+  const data = await serverApi('/overview');
+  const cards = data?.cards ?? {};
+  const recentLeads = data?.recentLeads ?? [];
 
   return (
     <div>
       <PageHeader title="Overview" subtitle="Snapshot of everything coming through rewebtech.in" />
 
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
-        <StatCard label="Total leads" value={totalLeads} icon={Inbox} />
-        <StatCard label="New this week" value={newLeadsThisWeek} icon={Inbox} hint="Contact form" />
-        <StatCard label="Subscribers" value={activeSubscribers} icon={Mail} />
-        <StatCard label="Reviews" value={totalReviews} icon={Star} />
-        <StatCard label="Waitlist" value={waitlistCount} icon={Rocket} />
-        <StatCard label="Visitors" value={totalVisitors} icon={Users} />
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatCard label="Total leads" value={cards.totalLeads ?? 0} icon={Inbox} />
+        <StatCard label="New this week" value={cards.newLeadsThisWeek ?? 0} icon={TrendingUp} hint="Contact form" />
+        <StatCard label="Reviews" value={cards.totalReviews ?? 0} icon={Star} />
+        <StatCard label="Featured" value={cards.featuredReviews ?? 0} icon={Sparkles} hint="Shown on site" />
       </div>
 
       <div className="mt-8 rounded-2xl bg-white/[0.04] ring-1 ring-white/10 backdrop-blur-sm">

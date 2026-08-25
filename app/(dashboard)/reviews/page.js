@@ -1,23 +1,24 @@
-import prisma from '@/lib/prisma';
+import { serverApi } from '@/lib/serverApi';
 import PageHeader from '@/component/PageHeader';
 import ReviewsList from '@/component/ReviewsList';
 
 export const dynamic = 'force-dynamic';
 
 export default async function ReviewsPage() {
-  const reviews = await prisma.review.findMany({
-    orderBy: { createdAt: 'desc' },
-  });
+  const data = await serverApi('/reviews');
+  const reviews = data?.items ?? [];
+  const total = data?.total ?? 0;
 
-  const avgRating = reviews.length
-    ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
-    : '—';
+  // avgRating API se aata hai aur poore data ka hai — is page ki list par limit
+  // lagi hai, isliye usme se average nikalna galat hota. `null` ka matlab koi
+  // review hi nahi.
+  const avgRating = data?.avgRating ?? null;
 
   return (
     <div>
       <PageHeader
         title="Reviews"
-        subtitle={`${reviews.length} verified review${reviews.length === 1 ? '' : 's'} · avg rating ${avgRating}`}
+        subtitle={`${total} verified review${total === 1 ? '' : 's'} · avg rating ${avgRating ?? '—'}`}
       />
       <ReviewsList reviews={reviews} />
     </div>

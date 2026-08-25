@@ -6,9 +6,6 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
   Inbox,
-  Mail,
-  BarChart3,
-  Rocket,
   Star,
   Users,
   LogOut,
@@ -20,9 +17,6 @@ import { useAuth } from '@/component/AuthProvider';
 const NAV_ITEMS = [
   { href: '/', label: 'Overview', icon: LayoutDashboard },
   { href: '/leads', label: 'Lead Generation', icon: Inbox },
-  { href: '/subscribers', label: 'Subscribers', icon: Mail },
-  { href: '/analytics', label: 'Analytics', icon: BarChart3 },
-  { href: '/waitlist', label: 'Waitlist', icon: Rocket },
   { href: '/reviews', label: 'Reviews', icon: Star },
 ];
 
