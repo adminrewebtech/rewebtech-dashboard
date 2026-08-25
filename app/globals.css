@@ -1,1 +1,99 @@
 @import "tailwindcss";
+
+/* ───────────────────────────────────────────────────────────────
+   Light theme tokens. Ek hi jagah, taaki har component me alag-alag
+   hex na bikhre aur poora dashboard ek hi cheez jaisa lage.
+   ─────────────────────────────────────────────────────────────── */
+@theme {
+  --color-canvas: #f4f7fc;   /* page background */
+  --color-surface: #ffffff;  /* cards, sidebar, drawer */
+  --color-hairline: #e6ecf6; /* borders */
+}
+
+@layer base {
+  /*
+   * Tailwind v4 me `button` ka cursor `default` hai — v3 me woh `pointer`
+   * karta tha. Isi wajah se poore dashboard me kisi bhi button par pointer
+   * nahi aa raha tha. Har jagah class lagane ke bajaye yahin ek baar.
+   */
+  button:not(:disabled),
+  [role='button']:not(:disabled),
+  label:has(> input[type='checkbox']:not(:disabled)),
+  summary {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [role='button'][aria-disabled='true'] {
+    cursor: not-allowed;
+  }
+
+  /* Keyboard users ko focus dikhna chahiye, mouse users ko nahi. */
+  :focus-visible {
+    outline: 2px solid var(--color-blue-500);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: color-mix(in oklch, var(--color-blue-500) 22%, transparent);
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 9px;
+    height: 9px;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+    background-clip: content-box;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+@layer components {
+  /*
+   * Ek hi surface treatment poore app me. Border ke saath ek bahut halki
+   * shadow — flat border-only cards ke muqable ismein depth aati hai, aur
+   * bhaari shadow ke muqable yeh saaf rehti hai.
+   */
+  .panel {
+    background: #fff;
+    border: 1px solid var(--color-hairline);
+    border-radius: 1rem;
+    box-shadow: 0 1px 2px rgb(15 23 42 / 0.04), 0 1px 3px rgb(15 23 42 / 0.03);
+  }
+
+  .panel-hover {
+    transition: box-shadow 180ms ease, border-color 180ms ease;
+  }
+  .panel-hover:hover {
+    border-color: #d7e0ee;
+    box-shadow: 0 4px 12px -2px rgb(15 23 42 / 0.08), 0 2px 4px rgb(15 23 42 / 0.04);
+  }
+
+  /* Primary action — halka gradient aur uske neeche blue glow. */
+  .btn-primary {
+    background-image: linear-gradient(to bottom, var(--color-blue-500), var(--color-blue-600));
+    color: #fff;
+    box-shadow: 0 6px 16px -6px rgb(37 99 235 / 0.55), inset 0 1px 0 rgb(255 255 255 / 0.25);
+    transition: filter 160ms ease, box-shadow 160ms ease;
+  }
+  .btn-primary:hover:not(:disabled) {
+    filter: brightness(1.06);
+    box-shadow: 0 8px 20px -6px rgb(37 99 235 / 0.65), inset 0 1px 0 rgb(255 255 255 / 0.3);
+  }
+  .btn-primary:active:not(:disabled) {
+    filter: brightness(0.96);
+  }
+}

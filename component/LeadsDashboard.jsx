@@ -1,27 +1,17 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { Search, Inbox, Sparkles, CircleCheck, TrendingUp, Loader2, ChevronRight, X } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/component/AuthProvider';
-
-const STATUS_META = {
-  NEW: { bg: '#eef2ff', color: '#3b52d6', border: '#c7d2fe' },
-  CONTACTED: { bg: '#fff7ed', color: '#c2650a', border: '#fed7aa' },
-  QUALIFIED: { bg: '#ecfdf5', color: '#0f9d58', border: '#a7f3d0' },
-  ON_HOLD: { bg: '#f1f5f9', color: '#475569', border: '#e2e8f0' },
-  CLIENT: { bg: '#e0f2fe', color: '#0369a1', border: '#bae6fd' },
-  JUNK: { bg: '#fef2f2', color: '#b91c1c', border: '#fecaca' },
-};
-
-const FILTER_TABS = ['All', 'NEW', 'CONTACTED', 'QUALIFIED', 'ON_HOLD', 'CLIENT', 'JUNK'];
-const STATUS_CHIPS = ['NEW', 'CONTACTED', 'QUALIFIED', 'ON_HOLD'];
-const CHIP_LABEL = { NEW: 'New', CONTACTED: 'Contacted', QUALIFIED: 'Qualified', ON_HOLD: 'On Hold' };
-
-const TOUCH_ICON = { EMAIL: '✉', CALL: '📞', OTHER: '👤' };
-const TOUCH_TITLE = { EMAIL: 'Email sent', CALL: 'Phone call', OTHER: 'Contact attempt' };
+import { useToasts, ToastStack } from '@/component/Toasts';
+import LeadDrawer from '@/component/LeadDrawer';
+import PageHeader from '@/component/PageHeader';
+import StatCard from '@/component/StatCard';
+import { FILTER_TABS, statusMeta } from '@/lib/leadStatus';
 
 function timeAgo(iso) {
-  if (!iso) return 'Never contacted';
+  if (!iso) return 'Never';
   const d = new Date(iso);
   const diffH = Math.round((Date.now() - d.getTime()) / 36e5);
   if (diffH < 1) return 'Just now';
@@ -32,20 +22,13 @@ function timeAgo(iso) {
   return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
 }
 
-function StatusPill({ status, label }) {
-  const meta = STATUS_META[status] || STATUS_META.NEW;
-  return (
-    <span
-      className="whitespace-nowrap rounded-full px-2.5 py-1 text-[11.5px] font-bold"
-      style={{ background: meta.bg, color: meta.color }}
-    >
-      {label}
-    </span>
-  );
+function Centered({ children }) {
+  return <div className="px-6 py-16 text-center text-sm text-slate-400">{children}</div>;
 }
 
 export default function LeadsDashboard() {
   const { can, checked } = useAuth();
+  const { toasts, push, dismiss } = useToasts();
 
   const [summary, setSummary] = useState(null);
   const [statusFilter, setStatusFilter] = useState('All');
@@ -61,50 +44,42 @@ export default function LeadsDashboard() {
   const [selectedLead, setSelectedLead] = useState(null);
   const [loadingDrawer, setLoadingDrawer] = useState(false);
 
-  const [emailOpen, setEmailOpen] = useState(false);
-  const [emailSubject, setEmailSubject] = useState('');
-  const [emailBody, setEmailBody] = useState('');
-  const [sendingEmail, setSendingEmail] = useState(false);
-  const [mutating, setMutating] = useState(false);
+  // Ek hi global "mutating" flag ke bajaye yeh batata hai ki *kaunsa* control
+  // chal raha hai (`status:CLIENT`, `touch:CALL`, `email`), taaki spinner usi
+  // button par aaye jo dabaya gaya hai.
+  const [pending, setPending] = useState(null);
 
-  const [toast, setToast] = useState('');
-  const toastTimer = useRef(null);
-
-  const showToast = (msg) => {
-    setToast(msg);
-    clearTimeout(toastTimer.current);
-    toastTimer.current = setTimeout(() => setToast(''), 4000);
-  };
-
-  const fetchSummary = async () => {
+  const fetchSummary = useCallback(async () => {
     try {
-      const data = await api('/leads/summary');
-      setSummary(data);
+      setSummary(await api('/leads/summary'));
     } catch (err) {
-      showToast(err.message || 'Failed to load summary');
+      push(err.message || 'Could not load the summary', 'error');
     }
-  };
+  }, [push]);
 
-  const fetchLeads = async ({ reset = false, cursor } = {}) => {
-    if (reset) setLoadingList(true);
-    else setLoadingMore(true);
-    try {
-      const data = await api('/leads', {
-        params: { status: statusFilter, q: debouncedSearch, cursor: reset ? undefined : cursor, limit: 25 },
-      });
-      setItems((prev) => (reset ? data.items : [...prev, ...data.items]));
-      setNextCursor(data.nextCursor);
-    } catch (err) {
-      showToast(err.message || 'Failed to load leads');
-    } finally {
-      setLoadingList(false);
-      setLoadingMore(false);
-    }
-  };
+  const fetchLeads = useCallback(
+    async ({ reset = false, cursor } = {}) => {
+      if (reset) setLoadingList(true);
+      else setLoadingMore(true);
+      try {
+        const data = await api('/leads', {
+          params: { status: statusFilter, q: debouncedSearch, cursor: reset ? undefined : cursor, limit: 25 },
+        });
+        setItems((prev) => (reset ? data.items : [...prev, ...data.items]));
+        setNextCursor(data.nextCursor);
+      } catch (err) {
+        push(err.message || 'Could not load leads', 'error');
+      } finally {
+        setLoadingList(false);
+        setLoadingMore(false);
+      }
+    },
+    [statusFilter, debouncedSearch, push]
+  );
 
   useEffect(() => {
     fetchSummary();
-  }, []);
+  }, [fetchSummary]);
 
   useEffect(() => {
     fetchLeads({ reset: true });
@@ -120,421 +95,275 @@ export default function LeadsDashboard() {
     setSelectedId(id);
     setSelectedLead(null);
     setLoadingDrawer(true);
-    setEmailOpen(false);
-    setEmailSubject('');
-    setEmailBody('');
     try {
-      const data = await api(`/leads/${id}`);
-      setSelectedLead(data);
+      setSelectedLead(await api(`/leads/${id}`));
     } catch (err) {
-      showToast(err.message || 'Failed to load lead');
+      push(err.message || 'Could not open that lead', 'error');
       setSelectedId(null);
     } finally {
       setLoadingDrawer(false);
     }
   };
 
-  const closeDrawer = () => {
+  const closeDrawer = useCallback(() => {
     setSelectedId(null);
     setSelectedLead(null);
-    setEmailOpen(false);
-  };
+  }, []);
 
-  const refreshAfterMutation = async () => {
-    await Promise.all([fetchSummary(), fetchLeads({ reset: true })]);
-  };
-
-  const changeStatus = async (status) => {
-    if (!selectedLead || mutating) return;
-    setMutating(true);
+  /**
+   * Har mutation ka ek hi raasta: server ka jawab drawer me daalo, list aur
+   * counts refresh karo, aur user ko batao ki kya hua.
+   *
+   * Refresh isliye zaroori hai ki status badalne par lead active filter se
+   * bahar ja sakti hai — table use hata dega, aur toast bata dega ki kyun.
+   */
+  const run = async (key, request, message, after, action) => {
+    if (pending) return;
+    setPending(key);
     try {
-      const updated = await api(`/leads/${selectedLead.id}/status`, { method: 'PATCH', body: { status } });
+      const updated = await request();
       setSelectedLead(updated);
-      refreshAfterMutation();
+      after?.();
+      push(message(updated), 'success', action);
+      await Promise.all([fetchSummary(), fetchLeads({ reset: true })]);
     } catch (err) {
-      showToast(err.message || 'Failed to update status');
+      push(err.message || 'That did not go through', 'error');
     } finally {
-      setMutating(false);
+      setPending(null);
     }
   };
 
-  const logTouch = async (type) => {
-    if (!selectedLead || mutating) return;
-    setMutating(true);
-    try {
-      const updated = await api(`/leads/${selectedLead.id}/contact-history`, { method: 'POST', body: { type } });
-      setSelectedLead(updated);
-      refreshAfterMutation();
-    } catch (err) {
-      showToast(err.message || 'Failed to log contact');
-    } finally {
-      setMutating(false);
-    }
+  /**
+   * Status badalna ek click ka kaam hai, isliye confirm dialog ki jagah Undo
+   * dete hain — galti sasti ho jaati hai aur flow rukta nahi.
+   */
+  const changeStatus = (status, after) => {
+    const previous = selectedLead?.status;
+    const id = selectedLead?.id;
+    return run(
+      `status:${status}`,
+      () => api(`/leads/${id}/status`, { method: 'PATCH', body: { status } }),
+      (lead) => `${lead.name} → ${statusMeta(lead.status).label}`,
+      after,
+      previous && previous !== status
+        ? {
+            label: 'Undo',
+            onClick: () =>
+              run(
+                `status:${previous}`,
+                () => api(`/leads/${id}/status`, { method: 'PATCH', body: { status: previous } }),
+                (lead) => `Reverted to ${statusMeta(lead.status).label}`
+              ),
+          }
+        : null
+    );
   };
 
-  const sendEmail = async () => {
-    if (!selectedLead || sendingEmail) return;
-    setSendingEmail(true);
-    try {
-      const updated = await api(`/leads/${selectedLead.id}/email`, {
-        method: 'POST',
-        body: { subject: emailSubject, body: emailBody },
-      });
-      setSelectedLead(updated);
-      setEmailOpen(false);
-      setEmailSubject('');
-      setEmailBody('');
-      refreshAfterMutation();
-    } catch (err) {
-      showToast(err.message || 'Failed to send email');
-    } finally {
-      setSendingEmail(false);
-    }
-  };
+  const logTouch = (type) =>
+    run(
+      `touch:${type}`,
+      () => api(`/leads/${selectedLead.id}/contact-history`, { method: 'POST', body: { type } }),
+      () => (type === 'CALL' ? 'Call logged' : 'Contact logged')
+    );
+
+  const sendEmail = ({ subject, body }, after) =>
+    run(
+      'email',
+      () => api(`/leads/${selectedLead.id}/email`, { method: 'POST', body: { subject, body } }),
+      (lead) => `Email sent to ${lead.email}`,
+      after
+    );
 
   if (!checked) {
-    return <div className="-m-8 flex min-h-screen items-center justify-center bg-[#f5f7fb] text-[#64748b]">Loading...</div>;
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center gap-2 text-sm text-slate-400">
+        <Loader2 size={16} className="animate-spin" /> Loading…
+      </div>
+    );
   }
 
   if (!can('lead:read')) {
     return (
-      <div className="-m-8 flex min-h-screen items-center justify-center bg-[#f5f7fb] text-[#64748b]">
+      <div className="flex min-h-[60vh] items-center justify-center text-sm text-slate-400">
         You don&apos;t have access to leads.
       </div>
     );
   }
 
-  const canUpdate = can('lead:update');
-  const canEmail = can('lead:email');
-
-  const statCards = summary
-    ? [
-        { label: 'Total Leads', value: summary.cards.total, color: '#0f172a' },
-        { label: 'New', value: summary.cards.new, color: '#3b52d6' },
-        { label: 'Qualified', value: summary.cards.qualified, color: '#0f9d58' },
-        { label: 'Converted', value: summary.cards.converted, color: '#0369a1' },
-      ]
-    : [];
+  const cards = summary?.cards;
+  const searching = debouncedSearch.length > 0;
 
   return (
-    <div className="-m-8 min-h-screen bg-[#f5f7fb] text-[#0f172a]">
-      {/* NAVBAR */}
-      <div className="sticky top-0 z-10 flex h-[68px] items-center justify-between border-b border-[#e5e9f0] bg-white px-7">
-        <div>
-          <div className="text-[19px] font-extrabold tracking-tight text-[#0f172a]">Lead Generation</div>
-          <div className="text-[12.5px] text-[#64748b]">Project inquiries from rewebtech.in</div>
-        </div>
-        <div className="flex items-center gap-4">
-          <input
-            placeholder="Search leads..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-56 rounded-[9px] border border-[#e2e8f0] bg-[#f8fafc] px-3.5 py-2.5 text-[13.5px] text-[#0f172a] outline-none placeholder:text-[#94a3b8] focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
+    <div>
+      <PageHeader title="Lead Generation" subtitle="Project inquiries from rewebtech.in" />
+
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatCard label="Total leads" value={cards?.total ?? '—'} icon={Inbox} />
+        <StatCard label="New" value={cards?.new ?? '—'} icon={Sparkles} hint="Not yet contacted" />
+        <StatCard label="Qualified" value={cards?.qualified ?? '—'} icon={CircleCheck} />
+        <StatCard label="Converted" value={cards?.converted ?? '—'} icon={TrendingUp} hint="Became clients" />
       </div>
 
-      {/* CONTENT */}
-      <div className="flex flex-col gap-5 px-7 py-6">
-        {toast && (
-          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700">{toast}</div>
-        )}
-
-        {/* STAT CARDS */}
-        <div className="grid grid-cols-4 gap-3.5">
-          {(statCards.length ? statCards : Array.from({ length: 4 })).map((card, i) => (
-            <div key={i} className="rounded-[14px] border border-[#e5e9f0] bg-white p-[18px_20px] flex flex-col gap-1.5">
-              <div className="text-[12.5px] font-semibold text-[#64748b]">{card?.label ?? ' '}</div>
-              <div className="text-[26px] font-extrabold tracking-tight" style={{ color: card?.color ?? '#0f172a' }}>
-                {card ? card.value : '–'}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* FILTER TABS */}
+      <div className="mt-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-wrap items-center gap-2">
-          {FILTER_TABS.map((f) => {
-            const active = statusFilter === f;
-            const count = f === 'All' ? null : summary?.counts?.[f] ?? 0;
-            const meta = f === 'All' ? null : STATUS_META[f];
-            const bg = f === 'All' ? (active ? '#0f172a' : '#fff') : active ? meta.bg : '#fff';
-            const color = f === 'All' ? (active ? '#fff' : '#334155') : active ? meta.color : '#334155';
-            const border = f === 'All' ? '#e2e8f0' : active ? meta.border : '#e2e8f0';
+          {FILTER_TABS.map((tab) => {
+            const active = statusFilter === tab;
+            if (tab === 'All') {
+              return (
+                <button
+                  key={tab}
+                  onClick={() => setStatusFilter(tab)}
+                  className={`rounded-full px-3.5 py-1.5 text-xs font-medium ring-1 ring-inset transition-colors ${
+                    active
+                      ? 'bg-slate-900 text-white ring-slate-900'
+                      : 'bg-white text-slate-500 ring-[#e6ecf6] hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                >
+                  All {summary ? `(${summary.total})` : ''}
+                </button>
+              );
+            }
+            const meta = statusMeta(tab);
+            const count = summary?.counts?.[tab] ?? 0;
             return (
               <button
-                key={f}
-                onClick={() => setStatusFilter(f)}
-                className="whitespace-nowrap rounded-[20px] border px-[15px] py-2 text-[13px] font-semibold"
-                style={{ background: bg, color, borderColor: border }}
+                key={tab}
+                onClick={() => setStatusFilter(tab)}
+                className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-medium ring-1 ring-inset transition-colors ${
+                  active ? meta.tab : 'bg-white text-slate-500 ring-[#e6ecf6] hover:bg-slate-50 hover:text-slate-900'
+                }`}
               >
-                {f === 'All' ? 'All' : `${CHIP_LABEL[f]} (${count})`}
+                <span className={`h-1.5 w-1.5 rounded-full ${active ? meta.dot : 'bg-slate-300'}`} />
+                {meta.label} ({count})
               </button>
             );
           })}
         </div>
 
-        {/* TABLE */}
-        <div className="overflow-hidden rounded-[14px] border border-[#e5e9f0] bg-white">
-          <div className="grid grid-cols-[1.6fr_1.1fr_1fr_1fr_1fr_1.3fr_0.8fr] border-b border-[#e5e9f0] bg-[#f8fafc] px-5 py-3 text-[11.5px] font-bold uppercase tracking-wider text-[#64748b]">
-            <div>Lead</div>
-            <div>Company</div>
-            <div>Budget</div>
-            <div>Timeline</div>
-            <div>Status</div>
-            <div>Last Contact</div>
-            <div />
-          </div>
-
-          {loadingList ? (
-            <div className="px-5 py-12 text-center text-sm text-[#94a3b8]">Loading leads...</div>
-          ) : items.length === 0 ? (
-            <div className="px-5 py-12 text-center text-sm text-[#94a3b8]">No leads match this filter.</div>
-          ) : (
-            items.map((lead) => (
-              <div
-                key={lead.id}
-                onClick={() => selectLead(lead.id)}
-                className="grid cursor-pointer grid-cols-[1.6fr_1.1fr_1fr_1fr_1fr_1.3fr_0.8fr] items-center border-b border-[#f1f5f9] px-5 py-[15px] text-[13.5px] hover:bg-[#f8fafc]"
-              >
-                <div className="flex min-w-0 flex-col gap-0.5">
-                  <div className="font-bold text-[#0f172a]">{lead.name}</div>
-                  <div className="overflow-hidden text-ellipsis whitespace-nowrap text-xs text-[#94a3b8]">
-                    {lead.email}
-                  </div>
-                </div>
-                <div className="text-[#334155]">{lead.company}</div>
-                <div className="text-[#334155]">{lead.budget}</div>
-                <div className="text-[#334155]">{lead.timeline}</div>
-                <div>
-                  <StatusPill status={lead.status} label={lead.statusLabel} />
-                </div>
-                <div className="text-[12.5px] text-[#64748b]">{timeAgo(lead.lastContactAt)}</div>
-                <div className="pr-1.5 text-right font-bold text-[#94a3b8]">›</div>
-              </div>
-            ))
+        <div className="relative lg:w-64">
+          <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search name, company, email…"
+            className="w-full rounded-xl border border-[#e6ecf6] bg-white py-2.5 pl-9 pr-8 text-sm text-slate-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] outline-none transition-shadow placeholder:text-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch('')}
+              aria-label="Clear search"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-slate-400 transition-colors hover:text-slate-700"
+            >
+              <X size={14} />
+            </button>
           )}
         </div>
+      </div>
 
-        {nextCursor && !loadingList && (
+      <div className="panel mt-4 overflow-hidden">
+        {/* Table apne andar scroll karti hai — page kabhi horizontally nahi khiskta. */}
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[840px] text-left text-sm">
+            <thead>
+              <tr className="border-b border-[#eef2f8] bg-[#fbfcfe] text-[11px] uppercase tracking-wide text-slate-400">
+                <th className="px-6 py-3 font-medium">Lead</th>
+                <th className="px-6 py-3 font-medium">Company</th>
+                <th className="px-6 py-3 font-medium">Budget</th>
+                <th className="px-6 py-3 font-medium">Timeline</th>
+                <th className="px-6 py-3 font-medium">Status</th>
+                <th className="px-6 py-3 font-medium">Last contact</th>
+                <th className="w-10 px-6 py-3" />
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#f1f4f9]">
+              {loadingList ? (
+                <tr>
+                  <td colSpan={7}>
+                    <Centered>
+                      <span className="inline-flex items-center gap-2">
+                        <Loader2 size={15} className="animate-spin" /> Loading leads…
+                      </span>
+                    </Centered>
+                  </td>
+                </tr>
+              ) : items.length === 0 ? (
+                <tr>
+                  <td colSpan={7}>
+                    <Centered>
+                      {searching
+                        ? `Nothing matches “${debouncedSearch}”.`
+                        : statusFilter === 'All'
+                          ? 'No leads yet.'
+                          : `No leads in ${statusMeta(statusFilter).label}.`}
+                    </Centered>
+                  </td>
+                </tr>
+              ) : (
+                items.map((lead) => {
+                  const meta = statusMeta(lead.status);
+                  return (
+                    <tr
+                      key={lead.id}
+                      tabIndex={0}
+                      onClick={() => selectLead(lead.id)}
+                      onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), selectLead(lead.id))}
+                      className="group cursor-pointer outline-none transition-colors hover:bg-[#f8fafd] focus-visible:bg-[#f4f7fc]"
+                    >
+                      <td className="px-6 py-4">
+                        <div className="font-medium text-slate-900">{lead.name}</div>
+                        <div className="mt-0.5 text-xs text-slate-400">{lead.email}</div>
+                      </td>
+                      <td className="px-6 py-4 text-slate-600">{lead.company || '—'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-slate-600">{lead.budget || '—'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-slate-600">{lead.timeline || '—'}</td>
+                      <td className="px-6 py-4">
+                        <span
+                          className={`inline-flex whitespace-nowrap items-center rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${meta.pill}`}
+                        >
+                          {meta.label}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-xs text-slate-400">{timeAgo(lead.lastContactAt)}</td>
+                      <td className="px-6 py-4 text-slate-300 transition-colors group-hover:text-slate-600">
+                        <ChevronRight size={16} />
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {nextCursor && !loadingList && (
+        <div className="mt-4 flex justify-center">
           <button
             onClick={() => fetchLeads({ cursor: nextCursor })}
             disabled={loadingMore}
-            className="self-center rounded-lg border border-[#e2e8f0] bg-white px-5 py-2 text-sm font-semibold text-[#334155] hover:bg-[#f8fafc] disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-xl border border-[#e6ecf6] bg-white px-5 py-2.5 text-sm font-medium text-slate-600 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors hover:border-[#d7e0ee] hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50"
           >
-            {loadingMore ? 'Loading...' : 'Load more'}
+            {loadingMore && <Loader2 size={14} className="animate-spin" />}
+            {loadingMore ? 'Loading…' : 'Load more'}
           </button>
-        )}
-      </div>
-
-      {/* DRAWER */}
-      {selectedId && (
-        <>
-          <div onClick={closeDrawer} className="fixed inset-0 z-40 bg-[#0a0e1a]/45" />
-          <div className="fixed right-0 top-0 z-41 flex h-screen w-[460px] max-w-[92vw] flex-col bg-white shadow-2xl">
-            {loadingDrawer || !selectedLead ? (
-              <div className="flex flex-1 items-center justify-center text-sm text-[#94a3b8]">Loading...</div>
-            ) : (
-              <>
-                <div className="flex items-start justify-between border-b border-[#e5e9f0] px-6 py-[22px]">
-                  <div>
-                    <div className="mb-1 text-[11px] font-bold uppercase tracking-wide text-[#94a3b8]">
-                      Lead detail
-                    </div>
-                    <div className="text-[19px] font-extrabold text-[#0f172a]">{selectedLead.name}</div>
-                    <div className="mt-0.5 text-[13px] text-[#64748b]">{selectedLead.company}</div>
-                  </div>
-                  <button onClick={closeDrawer} className="p-1 text-[22px] leading-none text-[#94a3b8]">
-                    ×
-                  </button>
-                </div>
-
-                <div className="flex-1 overflow-y-auto px-6 py-[22px] flex flex-col gap-[22px]">
-                  <div>
-                    <span
-                      className="rounded-full px-3 py-1.5 text-xs font-bold"
-                      style={{
-                        background: STATUS_META[selectedLead.status]?.bg,
-                        color: STATUS_META[selectedLead.status]?.color,
-                      }}
-                    >
-                      {selectedLead.statusLabel}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3.5">
-                    <Field label="Email" value={selectedLead.email} />
-                    <Field label="Phone" value={selectedLead.phone || '—'} />
-                    <Field label="Budget" value={selectedLead.budget} />
-                    <Field label="Timeline" value={selectedLead.timeline} />
-                  </div>
-
-                  <div>
-                    <div className="mb-1.5 text-[11px] font-semibold text-[#94a3b8]">Project details</div>
-                    <div className="rounded-[10px] bg-[#f8fafc] px-3.5 py-3 text-[13.5px] leading-relaxed text-[#334155]">
-                      {selectedLead.message || '—'}
-                    </div>
-                  </div>
-
-                  {canUpdate && (
-                    <div>
-                      <div className="mb-2 text-[11px] font-semibold text-[#94a3b8]">Change status</div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {STATUS_CHIPS.map((st) => {
-                          const active = selectedLead.status === st;
-                          const meta = STATUS_META[st];
-                          return (
-                            <button
-                              key={st}
-                              disabled={mutating}
-                              onClick={() => changeStatus(st)}
-                              className="rounded-[20px] border px-3.5 py-1.5 text-[12.5px] font-semibold disabled:opacity-60"
-                              style={{
-                                background: active ? meta.bg : '#fff',
-                                color: active ? meta.color : '#64748b',
-                                borderColor: active ? meta.border : '#e2e8f0',
-                              }}
-                            >
-                              {CHIP_LABEL[st]}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {canUpdate && (
-                    <div className="flex gap-2.5">
-                      <button
-                        disabled={mutating}
-                        onClick={() => changeStatus('JUNK')}
-                        className="flex-1 rounded-[10px] border border-red-200 bg-red-50 py-2.5 text-[13.5px] font-bold text-red-600 disabled:opacity-60"
-                      >
-                        Mark Junk
-                      </button>
-                      <button
-                        disabled={mutating}
-                        onClick={() => changeStatus('CLIENT')}
-                        className="flex-1 rounded-[10px] bg-blue-600 py-2.5 text-[13.5px] font-bold text-white disabled:opacity-60"
-                      >
-                        Convert to Client
-                      </button>
-                    </div>
-                  )}
-
-                  {(canUpdate || canEmail) && (
-                    <div>
-                      <div className="mb-2 text-[11px] font-semibold text-[#94a3b8]">Log a touchpoint</div>
-                      <div className="flex gap-2">
-                        {canUpdate && (
-                          <button
-                            disabled={mutating}
-                            onClick={() => logTouch('CALL')}
-                            className="flex-1 rounded-[9px] border border-[#e2e8f0] bg-[#f8fafc] py-2 text-[12.5px] font-semibold text-[#334155] disabled:opacity-60"
-                          >
-                            📞 Call
-                          </button>
-                        )}
-                        {canEmail && (
-                          <button
-                            onClick={() => setEmailOpen((v) => !v)}
-                            className="flex-1 rounded-[9px] border border-[#e2e8f0] bg-[#f8fafc] py-2 text-[12.5px] font-semibold text-[#334155]"
-                          >
-                            ✉ Email
-                          </button>
-                        )}
-                        {canUpdate && (
-                          <button
-                            disabled={mutating}
-                            onClick={() => logTouch('OTHER')}
-                            className="flex-1 rounded-[9px] border border-[#e2e8f0] bg-[#f8fafc] py-2 text-[12.5px] font-semibold text-[#334155] disabled:opacity-60"
-                          >
-                            👤 Other
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {canEmail && emailOpen && (
-                    <div className="flex flex-col gap-2.5 rounded-xl border border-[#dbe3ff] bg-[#f5f7ff] p-4">
-                      <div className="text-[12.5px] font-bold text-[#1d3fd6]">
-                        Compose email to {selectedLead.email}
-                      </div>
-                      <input
-                        value={emailSubject}
-                        onChange={(e) => setEmailSubject(e.target.value)}
-                        placeholder="Subject"
-                        disabled={sendingEmail}
-                        className="rounded-lg border border-[#dbe3ff] px-2.5 py-2 text-[13px] outline-none disabled:opacity-60"
-                      />
-                      <textarea
-                        value={emailBody}
-                        onChange={(e) => setEmailBody(e.target.value)}
-                        placeholder="Write your message..."
-                        disabled={sendingEmail}
-                        className="min-h-[90px] resize-y rounded-lg border border-[#dbe3ff] px-2.5 py-2 text-[13px] outline-none disabled:opacity-60"
-                      />
-                      <div className="flex gap-2">
-                        <button
-                          onClick={sendEmail}
-                          disabled={sendingEmail || !emailSubject.trim() || !emailBody.trim()}
-                          className="flex-1 rounded-lg bg-blue-600 py-2 text-[12.5px] font-bold text-white disabled:opacity-60"
-                        >
-                          {sendingEmail ? 'Sending...' : 'Send'}
-                        </button>
-                        <button
-                          onClick={() => setEmailOpen(false)}
-                          disabled={sendingEmail}
-                          className="rounded-lg border border-[#e2e8f0] bg-white px-4 py-2 text-[12.5px] font-semibold text-[#64748b] disabled:opacity-60"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  <div>
-                    <div className="mb-2 text-[11px] font-semibold text-[#94a3b8]">
-                      Contact history — {selectedLead.contactCounts?.email ?? 0} emails ·{' '}
-                      {selectedLead.contactCounts?.call ?? 0} calls · {selectedLead.contactCounts?.other ?? 0} other
-                    </div>
-                    <div className="flex flex-col gap-2.5">
-                      {(selectedLead.contactHistory || []).length === 0 ? (
-                        <div className="py-3.5 text-center text-[12.5px] text-[#94a3b8]">No contact logged yet.</div>
-                      ) : (
-                        selectedLead.contactHistory.map((entry, i) => (
-                          <div key={i} className="flex gap-2.5 rounded-[9px] bg-[#f8fafc] px-3 py-2.5">
-                            <div className="text-[15px]">{TOUCH_ICON[entry.type]}</div>
-                            <div className="min-w-0 flex-1">
-                              <div className="text-[13px] font-semibold text-[#0f172a]">
-                                {TOUCH_TITLE[entry.type]}
-                              </div>
-                              <div className="mt-0.5 text-xs text-[#94a3b8]">{timeAgo(entry.contactedAt)}</div>
-                              {entry.note && (
-                                <div className="mt-1 text-[12.5px] text-[#475569]">{entry.note}</div>
-                              )}
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        </>
+        </div>
       )}
-    </div>
-  );
-}
 
-function Field({ label, value }) {
-  return (
-    <div>
-      <div className="mb-[3px] text-[11px] font-semibold text-[#94a3b8]">{label}</div>
-      <div className="text-[13.5px] font-semibold text-[#0f172a]">{value}</div>
+      {selectedId && (
+        <LeadDrawer
+          lead={selectedLead}
+          loading={loadingDrawer}
+          onClose={closeDrawer}
+          canUpdate={can('lead:update')}
+          canEmail={can('lead:email')}
+          pending={pending}
+          onChangeStatus={changeStatus}
+          onLogTouch={logTouch}
+          onSendEmail={sendEmail}
+        />
+      )}
+
+      <ToastStack toasts={toasts} onDismiss={dismiss} />
     </div>
   );
 }

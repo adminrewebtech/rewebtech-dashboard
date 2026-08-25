@@ -15,10 +15,7 @@ export default async function DashboardLayout({ children }) {
     <AuthProvider initialUser={user}>
       <div className="flex">
         <Sidebar />
-        <main className="relative min-h-screen flex-1 overflow-x-hidden bg-[#060f21] px-8 py-8">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(65%_45%_at_50%_0%,rgba(37,99,235,0.12),transparent_70%)]" />
-          <div className="relative">{children}</div>
-        </main>
+        <main className="min-h-screen flex-1 overflow-x-hidden px-8 py-8">{children}</main>
       </div>
     </AuthProvider>
   );

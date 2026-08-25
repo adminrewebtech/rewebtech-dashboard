@@ -80,17 +80,16 @@ function LoginForm() {
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#060f21] px-4">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_50%_at_50%_0%,rgba(37,99,235,0.22),transparent_70%)]" />
-      <div className="pointer-events-none absolute inset-0 opacity-[0.35] [background-image:linear-gradient(to_right,rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.04)_1px,transparent_1px)] [background-size:56px_56px]" />
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#f4f7fc] px-4">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_50%_at_50%_0%,rgba(37,99,235,0.10),transparent_70%)]" />
 
-      <div className="relative w-full max-w-sm rounded-2xl bg-white/[0.04] p-8 shadow-[0_24px_64px_-16px_rgba(0,0,0,0.5)] ring-1 ring-white/10 backdrop-blur-sm">
+      <div className="relative w-full max-w-sm rounded-2xl border border-[#e6ecf6] bg-white p-8 shadow-[0_24px_64px_-24px_rgba(15,23,42,0.22)]">
         <div className="mb-6 flex flex-col items-center text-center">
-          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-[0_6px_16px_-6px_rgba(59,130,246,0.6)]">
+          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-[0_8px_20px_-8px_rgba(37,99,235,0.8)]">
             <LayoutDashboard size={22} />
           </div>
-          <h1 className="text-xl font-semibold tracking-tight text-white">RewebTech Dashboard</h1>
-          <p className="mt-1 text-sm text-gray-400">
+          <h1 className="text-xl font-semibold tracking-tight text-slate-900">RewebTech Dashboard</h1>
+          <p className="mt-1 text-sm text-slate-500">
             {step === 'email' && 'Sign in with your email'}
             {step === 'otp' && `Enter the code sent to ${email}`}
             {step === 'redirecting' && 'Signed in — redirecting…'}
@@ -99,12 +98,12 @@ function LoginForm() {
 
         {step === 'redirecting' ? (
           <div className="flex justify-center py-4">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-blue-500" />
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" />
           </div>
         ) : step === 'email' ? (
           <form onSubmit={requestOtp} className="space-y-4">
             <div>
-              <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-gray-200">
+              <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-slate-700">
                 Email
               </label>
               <input
@@ -115,13 +114,13 @@ function LoginForm() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
-                className="w-full rounded-lg bg-white/5 px-3.5 py-2.5 text-white outline-none ring-1 ring-white/10 transition-all placeholder:text-gray-500 focus:bg-white/[0.07] focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
+                className="w-full rounded-xl border border-[#e6ecf6] bg-white px-3.5 py-2.5 text-slate-900 outline-none transition-shadow placeholder:text-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 disabled:opacity-60"
                 placeholder="admin@rewebtech.in"
               />
             </div>
 
             {error && (
-              <p className="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-300 ring-1 ring-red-500/20">
+              <p className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
                 {error}
               </p>
             )}
@@ -129,7 +128,7 @@ function LoginForm() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-lg bg-blue-600 py-2.5 font-medium text-white transition-all duration-200 hover:bg-blue-500 disabled:opacity-60"
+              className="btn-primary w-full rounded-xl py-2.5 font-semibold disabled:opacity-50"
             >
               {loading ? 'Sending code...' : 'Send code'}
             </button>
@@ -137,7 +136,7 @@ function LoginForm() {
         ) : (
           <form onSubmit={verifyOtp} className="space-y-4">
             <div>
-              <label htmlFor="otp" className="mb-1.5 block text-sm font-medium text-gray-200">
+              <label htmlFor="otp" className="mb-1.5 block text-sm font-medium text-slate-700">
                 6-digit code
               </label>
               <input
@@ -151,19 +150,19 @@ function LoginForm() {
                 value={otp}
                 onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
                 disabled={loading}
-                className="w-full rounded-lg bg-white/5 px-3.5 py-2.5 text-center text-lg tracking-[0.4em] text-white outline-none ring-1 ring-white/10 transition-all placeholder:text-gray-500 placeholder:tracking-normal focus:bg-white/[0.07] focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
+                className="w-full rounded-xl border border-[#e6ecf6] bg-white px-3.5 py-2.5 text-center text-lg font-semibold tracking-[0.4em] text-slate-900 outline-none transition-shadow placeholder:font-normal placeholder:tracking-normal placeholder:text-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 disabled:opacity-60"
                 placeholder="482913"
               />
-              <p className="mt-1.5 text-xs text-gray-500">
+              <p className="mt-1.5 text-xs text-slate-400">
                 Code expires in {expiresInMinutes} minutes · sent {elapsedS}s ago
               </p>
-              <p className="mt-1 text-xs text-amber-400/80">
+              <p className="mt-1 text-xs text-amber-600">
                 Use only the newest email — requesting a new code invalidates any earlier one.
               </p>
             </div>
 
             {error && (
-              <p className="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-300 ring-1 ring-red-500/20">
+              <p className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
                 {error}
               </p>
             )}
@@ -171,7 +170,7 @@ function LoginForm() {
             <button
               type="submit"
               disabled={loading || otp.length !== 6}
-              className="w-full rounded-lg bg-blue-600 py-2.5 font-medium text-white transition-all duration-200 hover:bg-blue-500 disabled:opacity-60"
+              className="btn-primary w-full rounded-xl py-2.5 font-semibold disabled:opacity-50"
             >
               {loading ? 'Verifying...' : 'Verify & sign in'}
             </button>
@@ -184,7 +183,7 @@ function LoginForm() {
                   setError('');
                   setSentAt(null);
                 }}
-                className="text-gray-400 hover:text-white"
+                className="text-slate-400 transition-colors hover:text-slate-700"
               >
                 Change email
               </button>
@@ -192,7 +191,7 @@ function LoginForm() {
                 type="button"
                 onClick={requestOtp}
                 disabled={loading || !resendReady}
-                className="font-medium text-blue-400 hover:text-blue-300 disabled:opacity-60"
+                className="font-medium text-blue-600 transition-colors hover:text-blue-700 disabled:opacity-50"
               >
                 {resendReady ? 'Resend code' : `Resend code (${RESEND_COOLDOWN_S - elapsedS}s)`}
               </button>
